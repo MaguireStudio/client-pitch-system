@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Pitch CRM</title>
+<style>
+  :root {
+    --bg:#f7f8fb; --panel:#fff; --ink:#12182b; --muted:#64708a; --line:#e3e8f2;
+    --brand:#2563eb; --brand-ink:#fff; --hover:#f0f3fa;
+    --warn-bg:#fff5e0; --warn-ink:#7a4c05; --err-bg:#fdeaea; --err-ink:#97231f;
+    --ok-bg:#e7f6ed; --ok-ink:#10643a; --shadow:0 8px 24px rgb(16 24 44 / 8%);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0c1120; --panel:#151b2c; --ink:#eef2fa; --muted:#94a1ba; --line:#28314a;
+    --brand:#4f86f7; --brand-ink:#08101f; --hover:#1c2439;
+    --warn-bg:#3a2c10; --warn-ink:#f4cf87; --err-bg:#3a1917; --err-ink:#ffada6;
+    --ok-bg:#10321f; --ok-ink:#7fe0a6; --shadow:0 8px 24px rgb(0 0 0 / 35%);
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  button,input,select,textarea{font:inherit;color:inherit}
+  a{color:var(--brand)}
+
+  .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .brand{font-weight:700;font-size:1.05rem;margin-right:4px}
+  .ws-tabs{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:200px}
+  .ws-tab{display:flex;align-items:center;gap:7px;padding:6px 13px;cursor:pointer;
+    background:transparent;border:1px solid var(--line);border-radius:999px;font-size:.87rem}
+  .ws-tab:hover{background:var(--hover)}
+  .ws-tab.active{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .btn{padding:7px 14px;border:1px solid var(--line);border-radius:8px;
+    background:var(--panel);cursor:pointer;font-size:.87rem}
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+  .btn.danger{color:var(--err-ink)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+
+  .banner{margin:0;padding:9px 20px;font-size:.85rem;display:none}
+  .banner.show{display:block}
+  .banner.warn{background:var(--warn-bg);color:var(--warn-ink)}
+  .banner.err{background:var(--err-bg);color:var(--err-ink)}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 20px}
+  .toolbar input[type=search]{flex:1;min-width:180px;max-width:340px;padding:8px 12px;
+    border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{padding:7px 14px;border:0;background:var(--panel);cursor:pointer;font-size:.87rem}
+  .seg button.active{background:var(--brand);color:var(--brand-ink)}
+
+  .board{display:flex;gap:14px;padding:0 20px 24px;overflow-x:auto;align-items:flex-start}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    width:290px;flex:none;display:flex;flex-direction:column;max-height:calc(100vh - 200px)}
+  .col-head{display:flex;align-items:center;gap:8px;padding:12px 14px;
+    border-bottom:1px solid var(--line);font-size:.82rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.04em}
+  .col-count{margin-left:auto;color:var(--muted);font-weight:600}
+  .col-body{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;min-height:70px}
+  .col-body.drag{outline:2px dashed var(--brand);outline-offset:-6px;border-radius:8px}
+  .card{background:var(--bg);border:1px solid var(--line);border-radius:9px;
+    padding:11px 12px;cursor:grab}
+  .card:hover{border-color:var(--brand)}
+  .card:active{cursor:grabbing}
+  .card h4{margin:0 0 3px;font-size:.93rem}
+  .card .sub{color:var(--muted);font-size:.79rem;word-break:break-word}
+  .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+  .chip{padding:2px 8px;border-radius:999px;font-size:.71rem;font-weight:600;
+    background:var(--hover);color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;min-width:820px}
+  .tablewrap{margin:0 20px 24px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;overflow-x:auto}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.88rem}
+  th{background:var(--hover);font-size:.74rem;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--muted)}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--hover)}
+  tbody tr:last-child td{border-bottom:0}
+  .empty{padding:44px 16px;text-align:center;color:var(--muted)}
+
+  .overlay{position:fixed;inset:0;background:rgb(6 10 20 / 55%);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    width:100%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow)}
+  .modal-head{display:flex;align-items:center;gap:10px;padding:16px 20px;
+    border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+  .modal-head h3{margin:0;font-size:1.05rem;flex:1}
+  .modal-body{padding:18px 20px}
+  .modal-foot{display:flex;gap:9px;justify-content:flex-end;padding:14px 20px;
+    border-top:1px solid var(--line)}
+  label{display:block;margin-bottom:5px;font-size:.79rem;font-weight:600;color:var(--muted)}
+  .field{margin-bottom:14px}
+  .field input,.field select,.field textarea{width:100%;padding:9px 11px;
+    border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  .field textarea{min-height:74px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:560px){.row2{grid-template-columns:1fr}}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  .tabs button{padding:9px 14px;border:0;border-bottom:2px solid transparent;
+    background:none;cursor:pointer;font-size:.87rem;color:var(--muted)}
+  .tabs button.active{color:var(--ink);border-bottom-color:var(--brand);font-weight:600}
+  .thread{display:flex;flex-direction:column;gap:9px;max-height:270px;overflow-y:auto;
+    margin-bottom:14px;padding-right:4px}
+  .msg{padding:9px 12px;border-radius:10px;font-size:.86rem;max-width:85%}
+  .msg.out{align-self:flex-end;background:var(--brand);color:var(--brand-ink)}
+  .msg.in{align-self:flex-start;background:var(--hover)}
+  .msg .meta{font-size:.7rem;opacity:.75;margin-top:4px}
+  .msg.note{align-self:stretch;max-width:100%;background:var(--warn-bg);color:var(--warn-ink)}
+  .fieldrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .fieldrow:last-child{border-bottom:0}
+  .fieldrow .nm{flex:1;font-size:.88rem}
+  .fieldrow .kd{font-size:.74rem;color:var(--muted);padding:2px 8px;
+    background:var(--hover);border-radius:999px}
+  .hint{font-size:.78rem;color:var(--muted);margin:6px 0 0}
+  .opt-editor{display:flex;gap:6px;margin-bottom:6px}
+  .opt-editor input[type=text]{flex:1}
+  .opt-editor input[type=color]{width:42px;padding:2px;height:36px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">Pitch CRM</span>
+  <div class="ws-tabs" id="wsTabs"></div>
+  <button class="btn" id="btnNewWs">+ Business</button>
+  <button class="btn" id="btnFields">Customize fields</button>
+  <a class="btn" href="/" style="text-decoration:none">Booking page</a>
+</div>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <input type="search" id="search" placeholder="Search name, email, company, phone...">
+  <div class="seg">
+    <button id="viewBoard" class="active">Board</button>
+    <button id="viewTable">Table</button>
+  </div>
+  <button class="btn primary" id="btnNewContact">+ New contact</button>
+  <span id="stat" style="color:var(--muted);font-size:.85rem"></span>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="tablewrap" id="tablewrap" hidden>
+  <table>
+    <thead><tr id="tableHead"></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div class="empty" id="tableEmpty" hidden>No contacts yet.</div>
+</div>
+
+<!-- Contact detail -->
+<div class="overlay" id="contactOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="contactTitle">Contact</h3>
+      <button class="btn" data-close="contactOverlay">Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="active" data-tab="details">Details</button>
+        <button data-tab="messages">Messages</button>
+      </div>
+
+      <div id="tabDetails">
+        <div class="row2">
+          <div class="field"><label>Name</label><input id="cName"></div>
+          <div class="field"><label>Company</label><input id="cCompany"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Email</label><input id="cEmail" type="email"></div>
+          <div class="field"><label>Phone</label><input id="cPhone" type="tel"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Stage</label><select id="cStage"></select></div>
+          <div class="field"><label>Value ($)</label><input id="cValue" type="number" min="0" step="1"></div>
+        </div>
+        <div class="field"><label>Notes</label><textarea id="cNotes"></textarea></div>
+        <div id="customFields"></div>
+      </div>
+
+      <div id="tabMessages" hidden>
+        <div class="thread" id="thread"></div>
+        <div class="field">
+          <label>Channel</label>
+          <select id="mChannel">
+            <option value="sms">SMS</option>
+            <option value="email">Email</option>
+            <option value="note">Internal note</option>
+          </select>
+        </div>
+        <div class="field" id="subjWrap" hidden><label>Subject</label><input id="mSubject"></div>
+        <div class="field"><label>Message</label><textarea id="mBody"></textarea></div>
+        <button class="btn primary" id="btnSend">Send</button>
+        <p class="hint" id="sendHint"></p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" id="btnDeleteContact">Delete</button>
+      <button class="btn primary" id="btnSaveContact">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- New contact -->
+<div class="overlay" id="newOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3>New contact</h3>
+      <button class="btn" data-close="newOverlay">Close</button></div>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field"><label>Name *</label><input id="nName"></div>
+        <div class="field"><label>Company</label><input id="nCompany"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Email</label><input id="nEmail" type="email"></div>
+        <div class="field"><label>Phone</label><input id="nPhone" type="tel"></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="nNotes"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="newOverlay">Cancel</button>
+      <button class="btn primary" id="btnCreateContact">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Field customization -->
+<div class="overlay" id="fieldsOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3>Custom fields</h3>
+      <button class="btn" data-close="fieldsOverlay">Close</button></div>
+    <div class="modal-body">
+      <p class="hint" style="margin-top:0">Fields apply to the selected business only, so each
+        one can track what matters to it.</p>
+      <div id="fieldList"></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+      <div class="row2">
+        <div class="field"><label>Field name</label><input id="fName" placeholder="e.g. Roof type"></div>
+        <div class="field"><label>Type</label>
+          <select id="fKind">
+            <option value="text">Text</option>
+            <option value="select">Select (dropdown)</option>
+            <option value="multi_select">Multi-select</option>
+            <option value="number">Number</option>
+            <option value="date">Date</option>
+            <option value="checkbox">Checkbox</option>
+            <option value="url">URL</option>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+      </div>
+      <div id="optWrap" hidden>
+        <label>Dropdown options</label>
+        <div id="optList"></div>
+        <button class="btn" id="btnAddOpt" type="button">+ Add option</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="btnCreateField">Add field</button>
+    </div>
+  </div>
+</div>
+
+<!-- New workspace -->
+<div class="overlay" id="wsOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head"><h3>New business</h3>
+      <button class="btn" data-close="wsOverlay">Close</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Business name</label><input id="wsName" placeholder="e.g. Tint Devil"></div>
+      <div class="field"><label>Color</label><input id="wsColor" type="color" value="#2563eb" style="height:40px"></div>
+      <p class="hint">Comes with the default pipeline: New Lead, Contacted, Quoted, Won, Lost.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="wsOverlay">Cancel</button>
+      <button class="btn primary" id="btnCreateWs">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const S = { ws:[], wsId:null, stages:[], fields:[], contacts:[], view:'board', q:'',
+            current:null, messaging:null, durable:true, options:[] };
+
+const $ = id => document.getElementById(id);
+const esc = v => (v === null || v === undefined || v === '') ? '' : String(v);
+
+async function api(path, opts) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' }, ...opts
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = typeof body.detail === 'string' ? body.detail
+      : Array.isArray(body.detail) && body.detail.length ? body.detail[0].msg
+      : body.message || `Request failed (${res.status})`;
+    throw new Error(detail);
+  }
+  return body;
+}
+
+function banner(kind, msg) {
+  const el = $('banner');
+  if (!msg) { el.className = 'banner'; return; }
+  el.textContent = msg;
+  el.className = 'banner show ' + kind;
+}
+
+function toast(msg, kind) {
+  banner(kind || 'warn', msg);
+  if (kind !== 'err') setTimeout(() => { if ($('banner').textContent === msg) checkEnv(); }, 4000);
+}
+
+function checkEnv() {
+  const bits = [];
+  if (!S.durable) bits.push('Storage is not durable - set DATABASE_URL in Vercel.');
+  if (S.messaging && !S.messaging.live) bits.push('Messaging is in dry-run: nothing is actually sent.');
+  if (S.messaging && S.messaging.live && !S.messaging.sms.configured) bits.push('Twilio not configured.');
+  if (bits.length) banner('warn', bits.join(' ')); else banner('', '');
+}
+
+// ---- load
+
+async function boot() {
+  try {
+    const health = await api('/api/health');
+    S.messaging = health.messaging;
+    S.durable = health.durable;
+  } catch (err) { banner('err', 'API unreachable: ' + err.message); return; }
+
+  try {
+    const { workspaces } = await api('/api/workspaces');
+    S.ws = workspaces;
+    if (!S.ws.length) { banner('err', 'No businesses found.'); return; }
+    S.wsId = S.ws[0].id;
+    renderWsTabs();
+    await loadWorkspace();
+  } catch (err) { banner('err', err.message); }
+  checkEnv();
+}
+
+async function loadWorkspace() {
+  const [st, fl, ct] = await Promise.all([
+    api(`/api/workspaces/${S.wsId}/stages`),
+    api(`/api/workspaces/${S.wsId}/fields`),
+    api(`/api/workspaces/${S.wsId}/contacts` + (S.q ? `?q=${encodeURIComponent(S.q)}` : ''))
+  ]);
+  S.stages = st.stages; S.fields = fl.fields; S.contacts = ct.contacts;
+  render();
+}
+
+function renderWsTabs() {
+  const box = $('wsTabs');
+  box.replaceChildren();
+  for (const w of S.ws) {
+    const b = document.createElement('button');
+    b.className = 'ws-tab' + (w.id === S.wsId ? ' active' : '');
+    const dot = document.createElement('span');
+    dot.className = 'dot'; dot.style.background = w.color;
+    b.append(dot, document.createTextNode(w.name));
+    b.onclick = async () => { S.wsId = w.id; renderWsTabs(); await loadWorkspace(); };
+    box.appendChild(b);
+  }
+}
+
+// ---- render
+
+function render() {
+  const total = S.contacts.length;
+  const value = S.contacts.reduce((a, c) => a + (Number(c.value) || 0), 0);
+  $('stat').textContent = `${total} contact${total === 1 ? '' : 's'}`
+    + (value > 0 ? ` · $${value.toLocaleString()} pipeline` : '');
+  if (S.view === 'board') { $('board').hidden = false; $('tablewrap').hidden = true; renderBoard(); }
+  else { $('board').hidden = true; $('tablewrap').hidden = false; renderTable(); }
+}
+
+function contactCard(c) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.draggable = true;
+  el.dataset.id = c.id;
+
+  const h = document.createElement('h4'); h.textContent = c.name;
+  const sub = document.createElement('div'); sub.className = 'sub';
+  sub.textContent = [c.company, c.phone, c.email].filter(Boolean).join(' · ');
+  el.append(h, sub);
+
+  const chips = document.createElement('div'); chips.className = 'chips';
+  if (Number(c.value) > 0) {
+    const s = document.createElement('span'); s.className = 'chip';
+    s.textContent = '$' + Number(c.value).toLocaleString(); chips.appendChild(s);
+  }
+  for (const f of S.fields) {
+    const v = c.fields ? c.fields[f.key] : null;
+    if (v === null || v === undefined || v === '' || v === false) continue;
+    const vals = Array.isArray(v) ? v : [v];
+    for (const one of vals) {
+      const s = document.createElement('span'); s.className = 'chip';
+      const opt = (f.options || []).find(o => o.label === one);
+      if (opt) { s.style.background = opt.color; s.style.color = '#fff'; }
+      s.textContent = one === true ? f.name : String(one);
+      chips.appendChild(s);
+    }
+  }
+  if (chips.children.length) el.appendChild(chips);
+
+  el.onclick = () => openContact(c.id);
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', c.id);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  return el;
+}
+
+function renderBoard() {
+  const board = $('board');
+  board.replaceChildren();
+  const unstaged = S.contacts.filter(c => !c.stage_id);
+  const cols = S.stages.slice();
+
+  for (const st of cols) {
+    const col = document.createElement('div'); col.className = 'col';
+    const head = document.createElement('div'); head.className = 'col-head';
+    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = st.color;
+    const nm = document.createElement('span'); nm.textContent = st.name;
+    const ct = document.createElement('span'); ct.className = 'col-count';
+    head.append(dot, nm, ct);
+
+    const body = document.createElement('div'); body.className = 'col-body';
+    const mine = S.contacts.filter(c => c.stage_id === st.id);
+    ct.textContent = mine.length;
+    for (const c of mine) body.appendChild(contactCard(c));
+
+    body.addEventListener('dragover', e => { e.preventDefault(); body.classList.add('drag'); });
+    body.addEventListener('dragleave', () => body.classList.remove('drag'));
+    body.addEventListener('drop', async e => {
+      e.preventDefault(); body.classList.remove('drag');
+      const id = e.dataTransfer.getData('text/plain');
+      const c = S.contacts.find(x => x.id === id);
+      if (!c || c.stage_id === st.id) return;
+      const prev = c.stage_id;
+      c.stage_id = st.id; render();              // optimistic
+      try {
+        await api(`/api/contacts/${id}`, { method:'PATCH', body: JSON.stringify({ stage_id: st.id }) });
+      } catch (err) {
+        c.stage_id = prev; render();             // revert on failure
+        toast('Could not move contact: ' + err.message, 'err');
+      }
+    });
+
+    col.append(head, body);
+    board.appendChild(col);
+  }
+
+  if (unstaged.length) {
+    const col = document.createElement('div'); col.className = 'col';
+    const head = document.createElement('div'); head.className = 'col-head';
+    head.textContent = 'Unassigned';
+    const ct = document.createElement('span'); ct.className = 'col-count';
+    ct.textContent = unstaged.length; head.appendChild(ct);
+    const body = document.createElement('div'); body.className = 'col-body';
+    for (const c of unstaged) body.appendChild(contactCard(c));
+    col.append(head, body); board.appendChild(col);
+  }
+}
+
+function renderTable() {
+  const head = $('tableHead'); head.replaceChildren();
+  const cols = ['Name','Company','Phone','Email','Stage', ...S.fields.map(f => f.name),'Value'];
+  for (const c of cols) { const th = document.createElement('th'); th.textContent = c; head.appendChild(th); }
+
+  const body = $('tableBody'); body.replaceChildren();
+  for (const c of S.contacts) {
+    const tr = document.createElement('tr');
+    tr.onclick = () => openContact(c.id);
+    const stage = S.stages.find(s => s.id === c.stage_id);
+    const cells = [c.name, c.company, c.phone, c.email, stage ? stage.name : '--'];
+    for (const f of S.fields) {
+      const v = c.fields ? c.fields[f.key] : null;
+      cells.push(Array.isArray(v) ? v.join(', ') : (v === true ? 'Yes' : v === false ? 'No' : v));
+    }
+    cells.push(Number(c.value) > 0 ? '$' + Number(c.value).toLocaleString() : '');
+    for (const val of cells) {
+      const td = document.createElement('td');
+      td.textContent = esc(val) || '--';   // textContent: contact data is untrusted
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+  $('tableEmpty').hidden = S.contacts.length > 0;
+}
+
+// ---- contact detail
+
+function fieldInput(f, value) {
+  const wrap = document.createElement('div'); wrap.className = 'field';
+  const lab = document.createElement('label'); lab.textContent = f.name;
+  wrap.appendChild(lab);
+  let input;
+
+  if (f.kind === 'select') {
+    input = document.createElement('select');
+    input.appendChild(new Option('--', ''));
+    for (const o of f.options || []) input.appendChild(new Option(o.label, o.label));
+    input.value = value ?? '';
+  } else if (f.kind === 'multi_select') {
+    input = document.createElement('select');
+    input.multiple = true; input.size = Math.min(4, (f.options || []).length || 2);
+    for (const o of f.options || []) {
+      const opt = new Option(o.label, o.label);
+      opt.selected = Array.isArray(value) && value.includes(o.label);
+      input.appendChild(opt);
+    }
+  } else if (f.kind === 'checkbox') {
+    input = document.createElement('input'); input.type = 'checkbox';
+    input.checked = !!value; input.style.width = 'auto';
+  } else {
+    input = document.createElement('input');
+    input.type = { number:'number', date:'date', url:'url', email:'email', phone:'tel' }[f.kind] || 'text';
+    input.value = value ?? '';
+  }
+  input.dataset.fkey = f.key; input.dataset.fkind = f.kind;
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function collectCustomFields() {
+  const out = {};
+  for (const el of $('customFields').querySelectorAll('[data-fkey]')) {
+    const key = el.dataset.fkey, kind = el.dataset.fkind;
+    if (kind === 'multi_select') out[key] = Array.from(el.selectedOptions).map(o => o.value);
+    else if (kind === 'checkbox') out[key] = el.checked;
+    else if (kind === 'number') out[key] = el.value === '' ? null : Number(el.value);
+    else out[key] = el.value === '' ? null : el.value;
+  }
+  return out;
+}
+
+async function openContact(id) {
+  try {
+    const { contact, messages } = await api(`/api/contacts/${id}`);
+    S.current = contact; S.currentMessages = messages;
+    $('contactTitle').textContent = contact.name;
+    $('cName').value = contact.name; $('cCompany').value = contact.company;
+    $('cEmail').value = contact.email; $('cPhone').value = contact.phone;
+    $('cNotes').value = contact.notes; $('cValue').value = contact.value || 0;
+
+    const sel = $('cStage'); sel.replaceChildren();
+    sel.appendChild(new Option('Unassigned',''));
+    for (const s of S.stages) sel.appendChild(new Option(s.name, s.id));
+    sel.value = contact.stage_id || '';
+
+    const cf = $('customFields'); cf.replaceChildren();
+    for (const f of S.fields) cf.appendChild(fieldInput(f, (contact.fields || {})[f.key]));
+
+    renderThread();
+    switchTab('details');
+    $('contactOverlay').classList.add('show');
+  } catch (err) { toast(err.message, 'err'); }
+}
+
+function renderThread() {
+  const box = $('thread'); box.replaceChildren();
+  if (!S.currentMessages || !S.currentMessages.length) {
+    const p = document.createElement('p');
+    p.className = 'hint'; p.textContent = 'No messages yet.';
+    box.appendChild(p); return;
+  }
+  for (const m of S.currentMessages) {
+    const el = document.createElement('div');
+    el.className = 'msg ' + (m.channel === 'note' ? 'note' : m.direction === 'in' ? 'in' : 'out');
+    const body = document.createElement('div');
+    body.textContent = m.body;                 // textContent: message bodies are untrusted
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const when = new Date(m.created_at);
+    meta.textContent = `${m.channel.toUpperCase()} · ${m.status}`
+      + (isNaN(when) ? '' : ' · ' + when.toLocaleString())
+      + (m.error ? ' · ' + m.error : '');
+    el.append(body, meta);
+    box.appendChild(el);
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+function switchTab(name) {
+  for (const b of document.querySelectorAll('.tabs button'))
+    b.classList.toggle('active', b.dataset.tab === name);
+  $('tabDetails').hidden = name !== 'details';
+  $('tabMessages').hidden = name !== 'messages';
+}
+
+// ---- events
+
+document.querySelectorAll('.tabs button').forEach(b =>
+  b.onclick = () => switchTab(b.dataset.tab));
+document.querySelectorAll('[data-close]').forEach(b =>
+  b.onclick = () => $(b.dataset.close).classList.remove('show'));
+document.querySelectorAll('.overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.overlay.show')
+    .forEach(o => o.classList.remove('show'));
+});
+
+$('viewBoard').onclick = () => { S.view='board';
+  $('viewBoard').classList.add('active'); $('viewTable').classList.remove('active'); render(); };
+$('viewTable').onclick = () => { S.view='table';
+  $('viewTable').classList.add('active'); $('viewBoard').classList.remove('active'); render(); };
+
+let searchTimer;
+$('search').oninput = e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async () => { S.q = e.target.value.trim(); await loadWorkspace(); }, 250);
+};
+
+$('btnSaveContact').onclick = async () => {
+  if (!S.current) return;
+  const btn = $('btnSaveContact'); btn.disabled = true;
+  try {
+    await api(`/api/contacts/${S.current.id}`, { method:'PATCH', body: JSON.stringify({
+      name: $('cName').value.trim(), company: $('cCompany').value.trim(),
+      email: $('cEmail').value.trim(), phone: $('cPhone').value.trim(),
+      notes: $('cNotes').value, value: Number($('cValue').value) || 0,
+      stage_id: $('cStage').value || null, fields: collectCustomFields()
+    })});
+    $('contactOverlay').classList.remove('show');
+    await loadWorkspace();
+  } catch (err) { toast(err.message, 'err'); }
+  finally { btn.disabled = false; }
+};
+
+$('btnDeleteContact').onclick = async () => {
+  if (!S.current) return;
+  if (!confirm(`Delete ${S.current.name}? This also removes their message history.`)) return;
+  try {
+    await api(`/api/contacts/${S.current.id}`, { method:'DELETE' });
+    $('contactOverlay').classList.remove('show');
+    await loadWorkspace();
+  } catch (err) { toast(err.message, 'err'); }
+};
+
+$('mChannel').onchange = e => { $('subjWrap').hidden = e.target.value !== 'email'; };
+
+$('btnSend').onclick = async () => {
+  if (!S.current) return;
+  const body = $('mBody').value.trim();
+  if (!body) { toast('Write a message first.', 'err'); return; }
+  const btn = $('btnSend'); btn.disabled = true;
+  try {
+    const res = await api(`/api/contacts/${S.current.id}/messages`, { method:'POST',
+      body: JSON.stringify({ channel: $('mChannel').value, body, subject: $('mSubject').value })});
+    $('mBody').value = '';
+    const r = await api(`/api/contacts/${S.current.id}`);
+    S.currentMessages = r.messages; renderThread();
+    $('sendHint').textContent = res.note || '';
+  } catch (err) {
+    $('sendHint').textContent = '';
+    toast(err.message, 'err');
+  } finally { btn.disabled = false; }
+};
+
+$('btnNewContact').onclick = () => {
+  ['nName','nCompany','nEmail','nPhone','nNotes'].forEach(i => $(i).value = '');
+  $('newOverlay').classList.add('show');
+};
+
+$('btnCreateContact').onclick = async () => {
+  const name = $('nName').value.trim();
+  if (!name) { toast('Name is required.', 'err'); return; }
+  try {
+    await api(`/api/workspaces/${S.wsId}/contacts`, { method:'POST', body: JSON.stringify({
+      name, company: $('nCompany').value.trim(), email: $('nEmail').value.trim(),
+      phone: $('nPhone').value.trim(), notes: $('nNotes').value, source: 'manual'
+    })});
+    $('newOverlay').classList.remove('show');
+    await loadWorkspace();
+  } catch (err) { toast(err.message, 'err'); }
+};
+
+// ---- custom field editor
+
+function resetFieldForm() {
+  // Reopening must start clean - otherwise a previous session's draft options leak
+  // into the next field the user creates.
+  $('fName').value = '';
+  $('fKind').value = 'text';
+  S.options = [];
+  renderOptions();
+  $('optWrap').hidden = true;
+}
+
+$('btnFields').onclick = () => {
+  resetFieldForm();
+  renderFieldList();
+  $('fieldsOverlay').classList.add('show');
+};
+
+function renderFieldList() {
+  const box = $('fieldList'); box.replaceChildren();
+  if (!S.fields.length) {
+    const p = document.createElement('p'); p.className='hint';
+    p.textContent = 'No custom fields yet.'; box.appendChild(p); return;
+  }
+  for (const f of S.fields) {
+    const row = document.createElement('div'); row.className = 'fieldrow';
+    const nm = document.createElement('span'); nm.className='nm'; nm.textContent = f.name;
+    const kd = document.createElement('span'); kd.className='kd'; kd.textContent = f.kind;
+    const del = document.createElement('button'); del.className='btn danger'; del.textContent='Remove';
+    del.onclick = async () => {
+      if (!confirm(`Remove field "${f.name}"? Values already saved are kept.`)) return;
+      try { await api(`/api/fields/${f.id}`, { method:'DELETE' });
+        await loadWorkspace(); renderFieldList(); }
+      catch (err) { toast(err.message, 'err'); }
+    };
+    row.append(nm, kd, del); box.appendChild(row);
+  }
+}
+
+$('fKind').onchange = e => {
+  const needsOpts = ['select','multi_select'].includes(e.target.value);
+  $('optWrap').hidden = !needsOpts;
+  if (needsOpts && !S.options.length) addOption();
+};
+
+function addOption(label = '', color = '#64748b') {
+  S.options.push({ label, color });
+  renderOptions();
+}
+
+function renderOptions() {
+  const box = $('optList'); box.replaceChildren();
+  S.options.forEach((o, i) => {
+    const row = document.createElement('div'); row.className = 'opt-editor';
+    const txt = document.createElement('input'); txt.type='text';
+    txt.placeholder = 'Option label'; txt.value = o.label;
+    txt.oninput = () => { S.options[i].label = txt.value; };
+    const col = document.createElement('input'); col.type='color'; col.value = o.color;
+    col.oninput = () => { S.options[i].color = col.value; };
+    const rm = document.createElement('button'); rm.className='btn'; rm.textContent='×';
+    rm.onclick = () => { S.options.splice(i,1); renderOptions(); };
+    row.append(txt, col, rm); box.appendChild(row);
+  });
+}
+
+$('btnAddOpt').onclick = () => addOption();
+
+$('btnCreateField').onclick = async () => {
+  const name = $('fName').value.trim();
+  if (!name) { toast('Field name is required.', 'err'); return; }
+  const kind = $('fKind').value;
+  const options = ['select','multi_select'].includes(kind)
+    ? S.options.filter(o => o.label.trim()) : [];
+  if (['select','multi_select'].includes(kind) && !options.length) {
+    toast('Add at least one dropdown option.', 'err'); return;
+  }
+  try {
+    await api(`/api/workspaces/${S.wsId}/fields`, { method:'POST',
+      body: JSON.stringify({ name, kind, options, position: S.fields.length })});
+    resetFieldForm();
+    await loadWorkspace(); renderFieldList();
+  } catch (err) { toast(err.message, 'err'); }
+};
+
+$('btnNewWs').onclick = () => { $('wsName').value=''; $('wsOverlay').classList.add('show'); };
+
+$('btnCreateWs').onclick = async () => {
+  const name = $('wsName').value.trim();
+  if (!name) { toast('Business name is required.', 'err'); return; }
+  try {
+    const { workspace } = await api('/api/workspaces', { method:'POST',
+      body: JSON.stringify({ name, color: $('wsColor').value })});
+    $('wsOverlay').classList.remove('show');
+    const { workspaces } = await api('/api/workspaces');
+    S.ws = workspaces; S.wsId = workspace.id;
+    renderWsTabs(); await loadWorkspace();
+  } catch (err) { toast(err.message, 'err'); }
+};
+
+boot();
+</script>
+</body>
+</html>

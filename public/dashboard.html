@@ -1,47 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Appointments Dashboard</title>
-    <script>
-        function fetchAppointments() {
-            // Fetch the appointments from your server or API endpoint
-            // This is a placeholder for demonstration purposes
-            const appointments = [
-                { name: 'John Doe', phone: '123-456-7890', email: 'john@example.com', date: '2026-03-30', status: 'Scheduled' },
-                { name: 'Jane Smith', phone: '987-654-3210', email: 'jane@example.com', date: '2026-03-31', status: 'Pending' }
-            ];
-
-            const tableBody = document.getElementById('appointmentsTableBody');
-            tableBody.innerHTML = '';
-
-            appointments.forEach(appointment => {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${appointment.name}</td><td>${appointment.phone}</td><td>${appointment.email}</td><td>${appointment.date}</td><td>${appointment.status}</td>`;
-                tableBody.appendChild(row);
-            });
-        }
-
-        setInterval(fetchAppointments, 10000); // Auto-refresh every 10 seconds
-        window.onload = fetchAppointments;
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard moved</title>
+<meta http-equiv="refresh" content="0; url=/crm.html">
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:#f7f8fb;color:#12182b;font:16px/1.5 system-ui,-apple-system,sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#0c1120;color:#eef2fa}}
+  a{color:#2563eb}
+</style>
 </head>
 <body>
-    <h1>Scheduled Appointments</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Appointment Date</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="appointmentsTableBody">
-            <!-- Appointments will be populated here -->
-        </tbody>
-    </table>
+  <p>The dashboard is now the <a href="/crm.html">CRM</a>. Redirecting&hellip;</p>
 </body>
 </html>
