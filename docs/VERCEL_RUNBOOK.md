@@ -39,10 +39,22 @@ as it disables this and stops `public/` from being served:
 
 | Path | Served by | Notes |
 |---|---|---|
-| `/`, `/dashboard.html` | Vercel CDN, straight from `public/` | static, no function invoked |
+| `/index.html`, `/dashboard.html`, `/crm.html` | Vercel CDN, straight from `public/` | static, no function invoked |
+| `/`, `/dashboard`, `/crm` | Vercel CDN, rewritten to the matching `public/*.html` | explicit rewrites below |
 | `/api/*` | `api/index.py` serverless function | FastAPI ASGI app |
 
 `vercel.json` rewrites `/api/(.*)` to `/api/index` so FastAPI's own router handles the paths.
+
+**The bare root `/` is not served automatically.** Having `rewrites` + a `functions` entry
+in `vercel.json` does not make Vercel auto-map `/` to `public/index.html` the way a plain
+static host would — an exact filename like `/index.html` is served straight from `public/`,
+but `/` itself (and any other path with no matching file) falls through to the
+`api/index.py` function. Since that FastAPI app has no route for `/`, it returned its own
+JSON `{"detail":"Not Found"}` 404, which looked like the whole site was down when only the
+homepage's root URL was affected. Fixed by adding explicit rewrites for `/`, `/dashboard`,
+and `/crm` to their `.html` files in `vercel.json`. If a new top-level page is added under
+`public/`, give its clean path (if any) the same explicit rewrite — it will not work by
+default.
 
 ## Storage: read this before a client demo
 
